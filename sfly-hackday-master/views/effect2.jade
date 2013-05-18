@@ -1,0 +1,74 @@
+// Editor page accepts an image and allows applying effects
+
+extends layout
+
+block content
+  script(src='javascripts/jquery-ui-1.10.3/jquery-1.9.1.js')
+  script(src='javascripts/glfx.js')
+  div.
+<script id="2d-vertex-shader" type="x-shader/x-vertex">
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+uniform vec2 u_resolution;
+uniform float u_flipX;
+uniform float u_flipY;
+varying vec2 v_texCoord;
+void main() 
+{
+	vec2 zeroToOne = a_position / u_resolution;
+	vec2 zeroToTwo = zeroToOne * 2.0;
+	vec2 clipSpace = zeroToTwo - 1.0;
+	gl_Position = vec4(clipSpace * vec2(u_flipX, u_flipY), 0, 1);
+	v_texCoord = a_texCoord;
+}
+</script>
+
+<script id="2d-fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+uniform sampler2D u_image;
+uniform vec2 u_textureSize;
+uniform float u_kernel[9];
+varying vec2 v_texCoord;
+uniform float u_cPick;
+void main() 
+{
+	if (u_cPick>0.5)
+	{
+		vec4 colorPixel = texture2D(u_image, v_texCoord);
+		float lumin = 0.299 * colorPixel.r + 0.587 * colorPixel.g + 0.114 * colorPixel.b;
+		gl_FragColor = vec4(lumin,lumin,lumin, 1);
+	}
+	else
+	{
+		vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
+		vec4 colorSum =
+		   texture2D(u_image, v_texCoord + onePixel * vec2(-1, -1)) * u_kernel[0] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2( 0, -1)) * u_kernel[1] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2( 1, -1)) * u_kernel[2] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2(-1,  0)) * u_kernel[3] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2( 0,  0)) * u_kernel[4] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2( 1,  0)) * u_kernel[5] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2(-1,  1)) * u_kernel[6] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2( 0,  1)) * u_kernel[7] +
+		   texture2D(u_image, v_texCoord + onePixel * vec2( 1,  1)) * u_kernel[8] ;
+		float kernelWeight =
+		   u_kernel[0] +
+		   u_kernel[1] +
+		   u_kernel[2] +
+		   u_kernel[3] +
+		   u_kernel[4] +
+		   u_kernel[5] +
+		   u_kernel[6] +
+		   u_kernel[7] +
+		   u_kernel[8] ;
+		if (kernelWeight <= 0.0) {
+			kernelWeight = 1.0;
+		}
+		gl_FragColor = vec4((colorSum / kernelWeight).rgb, 1);
+	}
+}
+</script>
+  img#image(src='#{imageUrl}')
+  select
+    option(value='ink') Ink
+    option(value='zoomblur') Zoom Blur

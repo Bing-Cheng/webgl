@@ -1,0 +1,17 @@
+// Home page shows images retrieved from imgur
+
+extends layout
+
+
+block content
+  script(src='javascripts/jquery-ui-1.10.3/jquery-1.9.1.js')
+
+  h1= title
+  p Welcome to #{title}
+  form#search(action='/',method='get')
+    label Search
+    input#query(type='text',name='q')
+  for result in thumbs
+    span
+      a(href='#{endpoint}#{result.imgFilename}')
+        img.photo(src='#{result.thumbFilename}')

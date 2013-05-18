@@ -1,0 +1,15 @@
+// Editor page accepts an image and allows applying effects
+
+extends layout
+
+block content
+  script(src='javascripts/jquery-ui-1.10.3/jquery-1.9.1.js')
+  script(src='javascripts/glfx.js')
+  img#image(src='#{imageUrl}')
+  script
+    var effect = '#{effect}';
+  script(src='javascripts/effect.js')
+  select
+    option(value='ink') Ink
+    option(value='zoomblur') Zoom Blur
+

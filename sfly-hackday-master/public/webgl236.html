@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<title>Hack Day WebGL</title>
+<script type="text/javascript" src="javascripts/jquery-ui-1.10.3/jquery-1.9.1.js"></script>
+<script type="text/javascript" src="javascripts/webgl-utils.js"></script>
+<script type="text/javascript" src="javascripts/webgl-render.js"></script>
+
+<script>
+$(function(){main();});
+</script>
+
+<script id="2d-vertex-shader" type="x-shader/x-vertex">
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+uniform vec2 u_resolution;
+uniform float u_flipX;
+uniform float u_flipY;
+varying vec2 v_texCoord;
+void main() 
+{
+   vec2 zeroToOne = a_position / u_resolution;
+   vec2 zeroToTwo = zeroToOne * 2.0;
+   vec2 clipSpace = zeroToTwo - 1.0;
+   gl_Position = vec4(clipSpace * vec2(u_flipX, u_flipY), 0, 1);
+   v_texCoord = a_texCoord;
+}
+</script>
+
+<script id="2d-fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+uniform sampler2D u_image;
+uniform vec2 u_textureSize;
+uniform float u_kernel[9];
+varying vec2 v_texCoord;
+void main() 
+{
+   vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
+   vec4 colorSum =
+       texture2D(u_image, v_texCoord + onePixel * vec2(-1, -1)) * u_kernel[0] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 0, -1)) * u_kernel[1] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 1, -1)) * u_kernel[2] +
+       texture2D(u_image, v_texCoord + onePixel * vec2(-1,  0)) * u_kernel[3] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 0,  0)) * u_kernel[4] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 1,  0)) * u_kernel[5] +
+       texture2D(u_image, v_texCoord + onePixel * vec2(-1,  1)) * u_kernel[6] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 0,  1)) * u_kernel[7] +
+       texture2D(u_image, v_texCoord + onePixel * vec2( 1,  1)) * u_kernel[8] ;
+   float kernelWeight =
+       u_kernel[0] +
+       u_kernel[1] +
+       u_kernel[2] +
+       u_kernel[3] +
+       u_kernel[4] +
+       u_kernel[5] +
+       u_kernel[6] +
+       u_kernel[7] +
+       u_kernel[8] ;
+
+   if (kernelWeight <= 0.0) {
+     kernelWeight = 1.0;
+   }
+
+   gl_FragColor = vec4((colorSum / kernelWeight).rgb, 1);
+}
+</script>
+</head>
+
+<body>
+	<canvas id="canvas" width="1024" height="768"></canvas>
+	<br/>
+	<button type="Button" id="restore">Restore</button>
+	<button type="Button" id="smooth">Smooth</button>
+	<button type="Button" id="sharpen">Sharpen</button>
+	<button type="Button" id="edgeDetect">Edge Detect</button>
+	<button type="Button" id="colorPick">Color Pick</button>
+	<button type="Button" id="flipH">Flip Horizontally</button>
+	<button type="Button" id="flipV">Flip Vertically</button>
+</body>
+</html>
